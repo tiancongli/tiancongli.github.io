@@ -259,6 +259,156 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://tiancongli.github.io/2018/09/01/Music-Composer-Ⅰ/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="tl">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Icy's Life">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/09/01/Music-Composer-Ⅰ/" itemprop="url">Music Composer Ⅰ</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-09-01T22:36:58+08:00">
+                2018-09-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Coding/" itemprop="url" rel="index">
+                    <span itemprop="name">Coding</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h2 id="Intro"><a href="#Intro" class="headerlink" title="Intro"></a>Intro</h2><p>This articles series record how I create a music composer using <code>LSTM</code>.</p>
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>As a coder who has special interest in music<br>(actually my work is about a music app currently lol.),<br>it is my great pleasure to create a composer using machine learning techniques, which is like a double cake for me.<br>After some research, I decided to use RNN,<br>since music is actually the pitches distributed in time series. Naturally, <a href="https://en.wikipedia.org/wiki/Long_short-term_memory" target="_blank" rel="noopener">LSTM</a>, the kind of RNN<br>which have relatively long memory, is my first choice.<br>And I decided to use <code>Keras</code> as framework for convenience.</p>
+<h2 id="Preparation"><a href="#Preparation" class="headerlink" title="Preparation"></a>Preparation</h2><p>Like most machine learning projects,<br>the first, as well as the most important thing is prepare the data.</p>
+<p>Fortunately, there is a neat way to describe music, the MIDI file.<br>If you’ve never used MIDI file before,<br>it’s a file made of “events”, such as a note down event,<br>a note up event, a pedal event, etc.<br>You could find more information <a href="https://en.wikipedia.org/wiki/MIDI" target="_blank" rel="noopener">here</a> on wiki.<br>In short, I extracted the tick, pitch, and velocity features<br>from MIDI file, and the train sample I used was the <a href="https://www.youtube.com/watch?v=vJpAIOFN5WQ" target="_blank" rel="noopener">Chopin Nocturne Op. 72, No. 1 in E minor</a>,<br>since I’m a big fan of Chopin ;).</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_trainset</span><span class="params">()</span>:</span></span><br><span class="line">    res = []</span><br><span class="line">    <span class="keyword">for</span> file <span class="keyword">in</span> os.listdir(<span class="string">'.'</span>):</span><br><span class="line">        <span class="keyword">if</span> file.endswith(<span class="string">'.mid'</span>):</span><br><span class="line">            <span class="keyword">print</span> <span class="string">'load file: '</span> + file</span><br><span class="line">            pattern = midi.read_midifile(file)</span><br><span class="line">            <span class="comment"># only use tick, pitch and velocity as features at this moment</span></span><br><span class="line">            tick_list = []</span><br><span class="line">            pitch_list = []</span><br><span class="line">            velocity_list = []</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> event <span class="keyword">in</span> pattern[<span class="number">1</span>]:</span><br><span class="line">                <span class="keyword">if</span> isinstance(event, midi.NoteOnEvent):</span><br><span class="line">                    <span class="comment"># only use NoteOnEvent</span></span><br><span class="line">                    tick_list.append(event.tick)</span><br><span class="line">                    pitch_list.append(event.data[<span class="number">0</span>])</span><br><span class="line">                    velocity_list.append(event.data[<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> range(len(tick_list)):</span><br><span class="line">                time_step = [tick_list[i], pitch_list[i], velocity_list[i]]</span><br><span class="line">                res.append(time_step)</span><br><span class="line"></span><br><span class="line">    np_res = np.array(res)</span><br><span class="line">    <span class="keyword">print</span> <span class="string">"get trainset with shape: "</span> + str(np_res.shape)</span><br><span class="line">    <span class="keyword">return</span> np_res</span><br></pre></td></tr></table></figure>
+<p>And do not forget one more stuff, data normalization!<br>I forgot this myself at first<br>and always got the same outputs every time<br>no matter what input I fed into the model.<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.preprocessing <span class="keyword">import</span> MinMaxScaler</span><br><span class="line">scaler = MinMaxScaler()</span><br><span class="line">trainset = scaler.fit_transform(get_trainset())</span><br></pre></td></tr></table></figure></p>
+<h2 id="Generate-Batch"><a href="#Generate-Batch" class="headerlink" title="Generate Batch"></a>Generate Batch</h2><p>After normalized the data,<br>we need to write a batch generator to fed into the <code>Keras</code> model.<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_midi_batch</span><span class="params">()</span>:</span></span><br><span class="line">    batch_start = <span class="number">0</span></span><br><span class="line">    <span class="keyword">global</span> trainset</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        batch_end = batch_start + TIME_STEPS * BATCH_SIZE</span><br><span class="line"></span><br><span class="line">        <span class="comment"># if exceed the trainset, double it</span></span><br><span class="line">        <span class="keyword">if</span> batch_end &gt;= trainset.shape[<span class="number">0</span>]:</span><br><span class="line">            <span class="comment"># break</span></span><br><span class="line">            trainset = np.vstack((trainset, trainset))</span><br><span class="line"></span><br><span class="line">        origin_seq = trainset[batch_start: batch_end, :].reshape(BATCH_SIZE,</span><br><span class="line">                                                                 TIME_STEPS, <span class="number">-1</span>)</span><br><span class="line">        output_seq = np.zeros((BATCH_SIZE, OUTPUT_SIZE))</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(BATCH_SIZE):</span><br><span class="line">            output_seq[i] = trainset[batch_start + TIME_STEPS * (i + <span class="number">1</span>)]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># use every step as a new start of the train sequence</span></span><br><span class="line">        batch_start += <span class="number">1</span></span><br><span class="line">        <span class="keyword">yield</span> origin_seq, output_seq</span><br></pre></td></tr></table></figure></p>
+<p>Pretty straightforward, just take care of the data size,<br>which is <code>(batch_size, time_step, feature_size)</code>.</p>
+<h2 id="Training"><a href="#Training" class="headerlink" title="Training"></a>Training</h2><p>Finally, after all these staff finished,<br>let’s start training the model, but maybe next time…</p>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://tiancongli.github.io/2018/03/14/Integrating-SB-With-Spark/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -710,7 +860,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -732,7 +882,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">tags</span>
                 </a>
               </div>
